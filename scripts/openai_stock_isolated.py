@@ -108,6 +108,8 @@ def main():
     usage = response.usage
     prompt_used = int(getattr(usage, "prompt_tokens", 0) or 0)
     output_used = int(getattr(usage, "completion_tokens", 0) or 0)
+    if prompt_used <= 0 or output_used <= 0:
+        raise RuntimeError("Missing model token usage; cannot validate API costs")
     if output_used > MAX_OUTPUT_TOKENS:
         raise RuntimeError("Unexpected output token count")
     try:
