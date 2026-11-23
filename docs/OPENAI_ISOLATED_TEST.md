@@ -26,3 +26,8 @@
 ## 正式主工作流接入门槛
 
 确认单股报告可信、实际模型走 OpenAI 官方、Token统计正常、Usage发生费用记录后，再另开PR改动主工作流，加入持久化预算账本和复盘指标。
+
+## 现有生产密钥风险提醒
+
+- 现有 `.github/workflows/daily_analysis.yml` 已把 `secrets.OPENAI_API_KEY` 注入正式工作流。虽然本 PR 不修改该工作流，但新增 Repository Secret 后，如果其他模型凭据缺失或主模型配置恰好指向 OpenAI，正式定时任务仍可能使用 OpenAI 并产生额外 API 费用。请检查正式 Actions 任务是否开启、模型路由和 Usage。仅仅隔离测试脚本不会阻止原工作流读取同名 Secret。
+- 若需要严格隔离，可在后续改用仅授权测试 Environment 的密钥并更新本测试工作流；迁移前不要删除现有 Secret，以免影响已成功的 smoke test。
