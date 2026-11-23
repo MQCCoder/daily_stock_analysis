@@ -1,0 +1,44 @@
+name: OpenAI Isolated Stock Analysis (manual only)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: openai-stock-isolated
+  cancel-in-progress: false
+
+jobs:
+  single-stock:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out current repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+      - name: Install isolated analysis dependencies
+        run: python -m pip install 'litellm>=1.80.10,<2' 'yfinance>=0.2.50,<1' 'pandas>=2,<3' 'tiktoken>=0.7,<1'
+      - name: Run isolated, one-stock OpenAI research
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_TEST_MAX_USD: '0.02'
+          AIHUBMIX_KEY: ''
+          GEMINI_API_KEY: ''
+          LLM_CHANNELS: ''
+          LITELLM_CONFIG: ''
+          LITELLM_MODEL: 'openai/gpt-4o-mini'
+          OPENAI_BASE_URL: 'https://api.openai.com/v1'
+        run: python scripts/openai_stock_isolated.py
+      - name: Save report and usage evidence
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: openai-isolated-stock-${{ github.run_number }}
+          path: artifacts/openai-stock-test/
+          if-no-files-found: warn
+          retention-days: 14
