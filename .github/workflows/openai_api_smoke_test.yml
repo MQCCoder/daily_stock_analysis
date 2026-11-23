@@ -1,0 +1,70 @@
+
+name: OpenAI API Smoke Test
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: openai-api-smoke-test
+  cancel-in-progress: false
+
+jobs:
+  smoke-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install OpenAI SDK
+        run: python -m pip install "openai>=1,<3"
+
+      - name: Verify API call
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_MODEL: gpt-4o-mini
+          OPENAI_BASE_URL: https://api.openai.com/v1
+        shell: bash
+        run: |
+          python - <<'PY'
+          import os
+          import sys
+          from openai import OpenAI
+
+          if not os.getenv("OPENAI_API_KEY"):
+              sys.exit("Missing OPENAI_API_KEY secret")
+
+          client = OpenAI(
+              api_key=os.environ["OPENAI_API_KEY"],
+              base_url=os.environ["OPENAI_BASE_URL"],
+              timeout=20.0,
+              max_retries=0,
+          )
+
+          response = client.chat.completions.create(
+              model=os.environ["OPENAI_MODEL"],
+              messages=[
+                  {
+                      "role": "user",
+                      "content": "只回复：API连接成功"
+                  }
+              ],
+              max_tokens=30,
+          )
+
+          print("API result:",
+                response.choices[0].message.content)
+          print("Model:", response.model)
+          print("Input tokens:",
+                response.usage.prompt_tokens)
+          print("Output tokens:",
+                response.usage.completion_tokens)
+          print("Smoke test passed")
+          PY
+    
